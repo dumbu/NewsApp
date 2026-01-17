@@ -10,9 +10,14 @@ def main():
     app_dir = Path(__file__).parent
     image_name = "newsapp"
     image_tag = "0.1.0"
+
+    # Prefer the user-level rootless Docker socket when DOCKER_HOST is unset.
+    env = os.environ.copy()
+    if "DOCKER_HOST" not in env:
+        env["DOCKER_HOST"] = f"unix:///run/user/{os.getuid()}/docker.sock"
     
     # Check if Docker is running
-    result = subprocess.run(["docker", "ps"], capture_output=True)
+    result = subprocess.run(["docker", "ps"], capture_output=True, env=env)
     if result.returncode != 0:
         print("✗ Docker is not running. Please start Docker and try again.")
         sys.exit(1)
@@ -27,7 +32,8 @@ def main():
         print(f"Building Docker image {image_name}:{image_tag}...")
         build_result = subprocess.run(
             ["docker", "build", "-t", f"{image_name}:{image_tag}", "."],
-            cwd=app_dir
+            cwd=app_dir,
+            env=env,
         )
         if build_result.returncode != 0:
             print("✗ Failed to build Docker image")
@@ -49,7 +55,7 @@ def main():
     docker_args.append(f"{image_name}:{image_tag}")
     
     print("Launching NewsApp...")
-    result = subprocess.run(docker_args)
+    result = subprocess.run(docker_args, env=env)
     sys.exit(result.returncode)
 
 if __name__ == "__main__":
