@@ -32,7 +32,6 @@ class SettingsView(Static):
     def __init__(self, config: ConfigManager):
         super().__init__()
         self.config = config
-        self.category_select = None
         self.feeds_container = None
         self.current_category = Category.US
         self.feed_inputs: Dict[str, Input] = {}
@@ -44,10 +43,14 @@ class SettingsView(Static):
                 yield Label("⚙️  Settings - Manage News Sources")
                 yield Label("Select a category and edit RSS feed URLs:")
                 
-                # Category selector
-                categories = [(c.value, c.value.upper()) for c in Category]
-                self.category_select = Select(categories, id="category-select")
-                yield self.category_select
+                # Category selector - using tuples of (label, value)
+                categories = [(c.value.upper(), c.value) for c in Category]
+                select_widget = Select(
+                    options=categories,
+                    prompt="Select Category",
+                    id="category-select"
+                )
+                yield select_widget
                 
                 # Feeds list
                 yield Label("Feed URLs for this category:")
@@ -62,7 +65,6 @@ class SettingsView(Static):
     
     def on_mount(self) -> None:
         """Initialize settings view."""
-        self.category_select.value = self.current_category.value
         self._update_feeds_display()
     
     def on_select_changed(self, event: Select.Changed) -> None:
@@ -89,13 +91,13 @@ class SettingsView(Static):
             feed_url = feed_info.get('url', '')
             
             # Create input field for each feed
-            with self.feeds_container:
-                with Vertical():
-                    yield Label(f"📰 {feed_name}")
-                    feed_input = Input(value=feed_url, id=f"feed-{feed_name}")
-                    yield feed_input
-                    self.feed_inputs[feed_name] = feed_input
-                    yield Static("", height=1)  # Spacer
+            container = Vertical()
+            container.mount(Label(f"📰 {feed_name}"))
+            feed_input = Input(value=feed_url, id=f"feed-{feed_name}")
+            container.mount(feed_input)
+            self.feed_inputs[feed_name] = feed_input
+            container.mount(Static("", height=1))  # Spacer
+            self.feeds_container.mount(container)
     
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle button presses."""
@@ -127,13 +129,11 @@ class SettingsView(Static):
             logger.info("Settings saved successfully")
             
             # Show confirmation
-            with self.feeds_container:
-                yield Label("✅ Settings saved!")
+            self.feeds_container.mount(Label("✅ Settings saved!"))
         
         except Exception as e:
             logger.error(f"Error saving settings: {e}")
-            with self.feeds_container:
-                yield Label(f"❌ Error saving: {e}")
+            self.feeds_container.mount(Label(f"❌ Error saving: {e}"))
     
     def _add_new_feed(self) -> None:
         """Add a new feed for this category."""

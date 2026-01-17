@@ -66,68 +66,70 @@ class NewsConfig:
         return {
             "hackernews": {
                 "url": "https://news.ycombinator.com/rss",
-                "categories": ["tech", "agentic_ai", "business"],
-            },
-            "rss_bridge_hn": {
-                "url": "https://rssbridge.github.io/bridge01/?action=feed&bridge=Reddit&subreddit=technews&format=Atom",
-                "categories": ["tech"],
+                "categories": ["tech", "business"],
             },
             "github_trending": {
                 "url": "https://github.com/trending.atom",
-                "categories": ["tech", "agentic_ai"],
+                "categories": ["tech"],
             },
             "techcrunch": {
                 "url": "https://techcrunch.com/feed/",
-                "categories": ["tech", "agentic_ai", "business"],
-            },
-            "wired": {
-                "url": "https://www.wired.com/feed/rss",
                 "categories": ["tech", "business"],
             },
             "bbc_tech": {
-                "url": "http://feeds.bbc.co.uk/news/technology/rss.xml",
+                "url": "https://feeds.bbci.co.uk/news/technology/rss.xml",
                 "categories": ["tech"],
             },
             "bbc_us": {
-                "url": "http://feeds.bbc.co.uk/news/world/us_and_canada/rss.xml",
+                "url": "https://feeds.bbci.co.uk/news/world/us_and_canada/rss.xml",
                 "categories": ["us", "world"],
             },
             "bbc_world": {
-                "url": "http://feeds.bbc.co.uk/news/world/rss.xml",
+                "url": "https://feeds.bbci.co.uk/news/world/rss.xml",
                 "categories": ["world"],
             },
             "bbc_business": {
-                "url": "http://feeds.bbc.co.uk/news/business/rss.xml",
+                "url": "https://feeds.bbci.co.uk/news/business/rss.xml",
                 "categories": ["business"],
             },
-            "science_daily": {
-                "url": "https://www.sciencedaily.com/rss/all.xml",
+            "bbc_science": {
+                "url": "https://feeds.bbci.co.uk/news/science_and_environment/rss.xml",
                 "categories": ["science"],
             },
-            "nature": {
-                "url": "https://www.nature.com/nature.rss",
-                "categories": ["science"],
-            },
-            "sports_bbc": {
-                "url": "http://feeds.bbc.co.uk/sport/rss.xml",
+            "bbc_sport": {
+                "url": "https://feeds.bbci.co.uk/sport/rss.xml",
                 "categories": ["sports"],
             },
-            "entertainment_bbc": {
-                "url": "http://feeds.bbc.co.uk/news/entertainment_and_arts/rss.xml",
+            "bbc_entertainment": {
+                "url": "https://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml",
                 "categories": ["entertainment"],
+            },
+            "npr_news": {
+                "url": "https://feeds.npr.org/1001/rss.xml",
+                "categories": ["us", "world"],
+            },
+            "reuters_world": {
+                "url": "https://www.reutersagency.com/feed/?taxonomy=best-topics&post_type=best",
+                "categories": ["world", "business"],
+            },
+            "reddit_worldnews": {
+                "url": "https://www.reddit.com/r/worldnews/.rss",
+                "categories": ["world"],
+            },
+            "reddit_news": {
+                "url": "https://www.reddit.com/r/news/.rss",
+                "categories": ["us"],
+            },
+            "reddit_technology": {
+                "url": "https://www.reddit.com/r/technology/.rss",
+                "categories": ["tech"],
             },
         }
     
     @staticmethod
     def _default_scraping_sources() -> Dict[str, Dict[str, str]]:
         """Return default scraping source configuration."""
-        return {
-            "hacker_news": {
-                "url": "https://news.ycombinator.com/",
-                "selectors": {".titleline > a": "headline", ".score": "votes"},
-                "categories": ["tech", "agentic_ai"],
-            }
-        }
+        return {}  # Disabled by default - scraping is unreliable
 
 
 class ConfigManager:

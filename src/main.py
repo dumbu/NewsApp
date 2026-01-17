@@ -132,6 +132,21 @@ class NewsAppUI(App):
             }
             if button_id in category_map:
                 self._load_category(category_map[button_id])
+
+    def on_key(self, event) -> None:
+        """Handle numeric shortcuts for category selection."""
+        if self.current_view != "dashboard":
+            return
+        key_map = {
+            "1": Category.US,
+            "2": Category.WORLD,
+            "3": Category.TECH,
+            "4": Category.BUSINESS,
+            "5": Category.SCIENCE,
+        }
+        cat = key_map.get(event.key)
+        if cat:
+            self._load_category(cat)
     
     def _show_settings(self) -> None:
         """Show settings view."""
@@ -149,23 +164,25 @@ class NewsAppUI(App):
         main_container.remove_children()
         
         # Rebuild dashboard UI
-        with main_container:
-            with Vertical():
-                yield Label("📰 Terminal News App")
-                yield Label("Press 1-5 to select category, S for settings, Q to quit")
-                
-                with Horizontal():
-                    yield Button("🇺🇸 US", id="cat-us")
-                    yield Button("🌍 World", id="cat-world")
-                    yield Button("💻 Tech", id="cat-tech")
-                    yield Button("💼 Business", id="cat-business")
-                    yield Button("🔬 Science", id="cat-science")
-                
-                with Horizontal():
-                    yield Button("⚙️  Settings", id="settings-btn")
-                    yield Button("🔄 Refresh", id="refresh-btn")
-                
-                yield Static("Loading...", id="articles-list")
+        vertical = Vertical()
+        vertical.mount(Label("📰 Terminal News App"))
+        vertical.mount(Label("Press 1-5 to select category, S for settings, Q to quit"))
+        
+        horiz1 = Horizontal()
+        horiz1.mount(Button("🇺🇸 US", id="cat-us"))
+        horiz1.mount(Button("🌍 World", id="cat-world"))
+        horiz1.mount(Button("💻 Tech", id="cat-tech"))
+        horiz1.mount(Button("💼 Business", id="cat-business"))
+        horiz1.mount(Button("🔬 Science", id="cat-science"))
+        vertical.mount(horiz1)
+        
+        horiz2 = Horizontal()
+        horiz2.mount(Button("⚙️  Settings", id="settings-btn"))
+        horiz2.mount(Button("🔄 Refresh", id="refresh-btn"))
+        vertical.mount(horiz2)
+        
+        vertical.mount(Static("Loading...", id="articles-list"))
+        main_container.mount(vertical)
         
         # Reload current category
         self._load_category(self.state.current_category)

@@ -9,7 +9,8 @@ A fast, keyboard-driven terminal-based news application that displays headlines 
 - 📖 **[Full Documentation](docs/README.md)** - Complete user guide and features
 - 📋 **[Requirements](docs/REQUIREMENTS.md)** - Project requirements and specifications
 - 🐳 **[Docker Setup](docs/DOCKER.md)** - Docker and containerization guide
-- 🤝 **[Contributing](docs/CONTRIBUTING.md)** - How to contribute to the project
+- � **[Testing Guide](docs/TESTING.md)** - How to run tests (Docker only)
+- �🤝 **[Contributing](docs/CONTRIBUTING.md)** - How to contribute to the project
 - 📝 **[Changelog](docs/CHANGELOG.md)** - Version history and changes
 
 ## Features
@@ -64,16 +65,33 @@ python -m src.main
 ```
 .
 ├── src/                    # Application source code
-├── tests/                  # Unit and integration tests
+├── tests/                  # Unit and integration tests (run in Docker only)
 ├── docs/                   # Documentation (markdown files)
 ├── config/                 # Configuration templates
 ├── Dockerfile              # Docker image definition
 ├── docker-compose.yml      # Docker Compose configuration
+├── docker-compose.test.yml # Test environment configuration
+├── pytest.ini              # Pytest configuration
 ├── pyproject.toml          # Project metadata and dependencies
 ├── requirements.txt        # Python dependencies
+├── newsapp                 # Launcher script
 ├── LICENSE                 # MIT License
 └── README.md               # This file
 ```
+
+## Running Tests
+
+All tests must be run in Docker containers:
+
+```bash
+# Run all tests
+./newsapp test
+
+# Run with coverage
+./newsapp test --coverage
+```
+
+See [Testing Guide](docs/TESTING.md) for more details.
 
 ## Documentation
 

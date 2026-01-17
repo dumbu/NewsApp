@@ -6,6 +6,40 @@ import sys
 import os
 from pathlib import Path
 
+def run_tests(app_dir, env, args):
+    """Run tests in Docker container."""
+    print("Running tests in Docker...")
+    
+    # Build test image if needed
+    build_result = subprocess.run(
+        ["docker", "compose", "-f", "docker-compose.test.yml", "build"],
+        cwd=app_dir,
+        env=env,
+    )
+    if build_result.returncode != 0:
+        print("✗ Failed to build test image")
+        sys.exit(1)
+    
+    # Prepare test command
+    test_args = ["docker", "compose", "-f", "docker-compose.test.yml", "run", "--rm", "test"]
+    
+    # Handle coverage flag
+    if "--coverage" in args:
+        test_args.extend(["pytest", "--cov=src", "--cov-report=html", "--cov-report=term"])
+    else:
+        test_args.append("pytest")
+    
+    # Add any additional pytest args
+    pytest_args = [arg for arg in args if arg not in ["test", "--coverage"]]
+    test_args.extend(pytest_args)
+    
+    result = subprocess.run(test_args, cwd=app_dir, env=env)
+    
+    if "--coverage" in args and result.returncode == 0:
+        print("\n✓ Coverage report generated in htmlcov/index.html")
+    
+    sys.exit(result.returncode)
+
 def main():
     app_dir = Path(__file__).parent
     image_name = "newsapp"
@@ -21,6 +55,25 @@ def main():
     if result.returncode != 0:
         print("✗ Docker is not running. Please start Docker and try again.")
         sys.exit(1)
+    
+    # Handle test command
+    if len(sys.argv) > 1 and sys.argv[1] == "test":
+        run_tests(app_dir, env, sys.argv[2:])
+        return
+    
+    # Handle build command
+    if len(sys.argv) > 1 and sys.argv[1] == "build":
+        print(f"Building Docker image {image_name}:{image_tag}...")
+        build_result = subprocess.run(
+            ["docker", "build", "-t", f"{image_name}:{image_tag}", "."],
+            cwd=app_dir,
+            env=env,
+        )
+        if build_result.returncode != 0:
+            print("✗ Failed to build Docker image")
+            sys.exit(1)
+        print("✓ Docker image built successfully")
+        sys.exit(0)
     
     # Check if image exists, build if not
     check_image = subprocess.run(
@@ -43,8 +96,10 @@ def main():
     # Run the container
     docker_args = [
         "docker", "run", "--rm", "-it",
-        "-v", f"{app_dir}/config:/app/config",
-        "-v", f"{app_dir}/.newsapp:/app/.newsapp",
+        # Read-only config mount
+        "-v", f"{app_dir}/config:/app/config:ro",
+        # Use a named volume for cache to avoid host permission issues
+        "-v", "newsapp-data:/app/.newsapp",
         "-e", "PYTHONUNBUFFERED=1",
     ]
     
