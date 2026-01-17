@@ -1,0 +1,29 @@
+## Quick Start
+
+### Using docker-compose (Recommended)
+
+```bash
+# Run with default settings (uses RSS feeds - no API key needed!)
+docker-compose up -it
+
+# Or, run with optional News API key for additional sources
+export NEWS_API_KEY="your_api_key_here"
+docker-compose up -it
+```
+
+### Using Docker directly
+
+```bash
+# Build the image
+docker build -t terminal-news-app:latest .
+
+# Run with default settings (RSS feeds, no API key needed)
+docker run -it terminal-news-app:latest
+
+# Or run with optional API key
+docker run -it \
+  -v ~/.newsapp:/app/.newsapp \
+  -v ./config:/app/config \
+  -e NEWS_API_KEY="your_api_key_here" \
+  terminal-news-app:latest
+```

@@ -1,0 +1,56 @@
+#!/usr/bin/env python3
+"""NewsApp Launcher - Run the terminal news app in Docker."""
+
+import subprocess
+import sys
+import os
+from pathlib import Path
+
+def main():
+    app_dir = Path(__file__).parent
+    image_name = "newsapp"
+    image_tag = "0.1.0"
+    
+    # Check if Docker is running
+    result = subprocess.run(["docker", "ps"], capture_output=True)
+    if result.returncode != 0:
+        print("✗ Docker is not running. Please start Docker and try again.")
+        sys.exit(1)
+    
+    # Check if image exists, build if not
+    check_image = subprocess.run(
+        ["docker", "images", "-q", f"{image_name}:{image_tag}"],
+        capture_output=True, text=True
+    )
+    
+    if not check_image.stdout.strip() or "--build" in sys.argv:
+        print(f"Building Docker image {image_name}:{image_tag}...")
+        build_result = subprocess.run(
+            ["docker", "build", "-t", f"{image_name}:{image_tag}", "."],
+            cwd=app_dir
+        )
+        if build_result.returncode != 0:
+            print("✗ Failed to build Docker image")
+            sys.exit(1)
+        print("✓ Docker image built successfully")
+    
+    # Run the container
+    docker_args = [
+        "docker", "run", "--rm", "-it",
+        "-v", f"{app_dir}/config:/app/config",
+        "-v", f"{app_dir}/.newsapp:/app/.newsapp",
+        "-e", "PYTHONUNBUFFERED=1",
+    ]
+    
+    # Handle --shell mode
+    if "--shell" in sys.argv:
+        docker_args.extend(["--entrypoint", "/bin/bash"])
+    
+    docker_args.append(f"{image_name}:{image_tag}")
+    
+    print("Launching NewsApp...")
+    result = subprocess.run(docker_args)
+    sys.exit(result.returncode)
+
+if __name__ == "__main__":
+    main()
