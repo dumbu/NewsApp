@@ -1,0 +1,58 @@
+version: '3.9'
+
+services:
+  newsapp:
+    image: newsapp:0.1.0
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: newsapp
+    
+    # Interactive mode for terminal-based application
+    stdin_open: true
+    tty: true
+    
+    # Environment variables
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+      - NEWS_API_KEY=${NEWS_API_KEY:-your_api_key_here}
+      - CONFIG_PATH=/app/config/config.yaml
+      - DEBUG=${DEBUG:-false}
+    
+    # Volume mounts for persistence and configuration
+    volumes:
+      # Cache and logs - persistent across container restarts
+      - newsapp-data:/app/.newsapp
+      # Configuration - mounted from host for easy editing
+      - ./config:/app/config:ro
+      # Optional: mount logs directory
+      - newsapp-logs:/app/logs
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    
+    # Restart policy
+    restart: unless-stopped
+    
+    # Optional: override command
+    # command: python -m src.main
+
+volumes:
+  newsapp-data:
+    driver: local
+  newsapp-logs:
+    driver: local
+
+# Network configuration (optional)
+networks:
+  default:
+    name: terminal-news-app-network
+    driver: bridge

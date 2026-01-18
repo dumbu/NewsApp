@@ -1,0 +1,90 @@
+# Configuration template for Terminal News Application
+
+api:
+  # News API provider (newsapi, googleapi, rss)
+  provider: "newsapi"
+  # Your API key (get from https://newsapi.org)
+  key: "YOUR_API_KEY_HERE"
+  base_url: "https://newsapi.org/v2"
+  request_timeout: 10
+  # Maximum requests per day (depends on your API plan)
+  max_requests_per_day: 100
+
+# Categories to display
+categories:
+  enabled:
+    - us
+    - world
+    - tech
+    - business
+    - deals
+    - sports
+    - entertainment
+    - science
+    - local
+  # Default number of articles per category
+  articles_per_category: 10
+
+# UI Configuration
+ui:
+  theme: "dark"  # Options: dark, light
+  color_mode: true
+  columns: 3
+  # Show source icons
+  show_source_icons: true
+  # Truncate headlines longer than this
+  max_headline_length: 80
+  # Time format for display
+  date_format: "%b %d, %H:%M"
+
+# Caching configuration
+cache:
+  # Enable local caching
+  enabled: true
+  # Time to live in seconds (1 hour = 3600)
+  ttl: 3600
+  # Database path (relative to home directory)
+  db_path: ".newsapp/cache.db"
+  # Cache size limit in MB
+  max_size_mb: 500
+
+# Auto-refresh configuration
+refresh:
+  # Enable auto-refresh
+  enabled: true
+  # Refresh interval in seconds (5 minutes = 300)
+  interval: 300
+  # Refresh on startup
+  on_startup: true
+
+# User preferences
+user:
+  # Location for local news (US state code, country code)
+  location: "US"
+  # Language code (en, es, fr, etc.)
+  language: "en"
+  # Search history limit
+  search_history_limit: 20
+  # Save reading history
+  save_history: true
+
+# Logging configuration
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  # Log file path (relative to home directory)
+  file_path: ".newsapp/logs/app.log"
+  # Maximum log file size in MB before rotation
+  max_file_size_mb: 10
+  # Number of backup log files to keep
+  backup_count: 3
+
+# Advanced settings
+advanced:
+  # Disable SSL verification (NOT RECOMMENDED)
+  disable_ssl_verification: false
+  # Custom user agent
+  user_agent: "TerminalNewsApp/0.1.0"
+  # Enable experimental features
+  experimental_features: false
+  # Debug mode
+  debug: false
