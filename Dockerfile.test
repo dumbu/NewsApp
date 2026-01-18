@@ -1,0 +1,26 @@
+FROM python:3.11-slim-bullseye
+LABEL description="NewsApp - Test Environment"
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Create and activate virtual environment
+RUN python -m venv /app/venv
+ENV PATH="/app/venv/bin:$PATH"
+
+# Install dependencies
+COPY requirements.txt .
+RUN pip install --upgrade pip && \
+    pip install -r requirements.txt && \
+    pip install pytest pytest-asyncio pytest-cov
+
+# Copy source code
+COPY src/ /app/src/
+COPY tests/ /app/tests/
+COPY pytest.ini /app/pytest.ini
+COPY config/ /app/config/
+
+# Run tests by default
+CMD ["pytest"]
