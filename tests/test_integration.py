@@ -105,17 +105,139 @@ class TestNewsAPIIntegration:
             limit_per_source=5
         )
         
-        # Should get some articles (unless network is down)
-        # Making this flexible since it's a real network call
+        # Should get articles from a reliable feed like HN
         assert isinstance(articles, list)
+        assert len(articles) > 0, "Expected to fetch at least one article from HN RSS feed"
         
-        # If we got articles, they should be valid
-        if articles:
-            article = articles[0]
-            assert article.id
-            assert article.headline
-            assert article.url.startswith('http')
-            assert article.category == Category.TECH
+        # Validate article structure and content
+        article = articles[0]
+        assert article.id, "Article should have an ID"
+        assert article.headline, "Article should have a headline"
+        assert len(article.headline) > 5, "Article headline should have meaningful content"
+        assert article.url.startswith('http'), "Article URL should be valid"
+        assert article.category == Category.TECH, "Article should have correct category"
+        assert article.source, "Article should have a source"
+        
+        # Validate content exists
+        assert article.summary or article.content, "Article should have summary or content"
+        if article.summary:
+            assert len(article.summary) > 10, "Article summary should have meaningful content"
+    
+    @pytest.mark.asyncio
+    @pytest.mark.integration
+    async def test_fetch_multiple_feeds(self):
+        """Test fetching from multiple feeds successfully."""
+        handler = NewsHandler()
+        
+        # Use multiple reliable feeds
+        feeds = [
+            {"name": "HN", "url": "https://news.ycombinator.com/rss"},
+            {"name": "Reddit", "url": "https://www.reddit.com/r/technology/.rss"}
+        ]
+        
+        articles = await handler.fetch_category(
+            feeds=feeds,
+            scraping=[],
+            category=Category.TECH,
+            limit_per_source=3
+        )
+        
+        # Should get articles from at least one feed
+        assert isinstance(articles, list)
+        assert len(articles) > 0, "Expected to fetch articles from at least one feed"
+        
+        # Validate all articles have required content
+        for article in articles:
+            assert article.headline, f"Article {article.id} missing headline"
+            assert len(article.headline) > 5, f"Article {article.id} headline too short"
+            assert article.url, f"Article {article.id} missing URL"
+            assert article.source, f"Article {article.id} missing source"
+            assert article.summary or article.content, f"Article {article.id} missing content"
+        
+        # Check for diversity of sources
+        sources = {article.source for article in articles}
+        assert len(sources) > 0, "Should have at least one unique source"
+    
+    @pytest.mark.asyncio
+    @pytest.mark.integration
+    @pytest.mark.slow
+    async def test_all_configured_categories_fetch_news(self):
+        """Test that all configured categories can successfully fetch news."""
+        config = ConfigManager()
+        handler = NewsHandler()
+        
+        # Test ALL categories including new ones
+        categories_to_test = [
+            Category.BREAKING,
+            Category.AGENTIC_AI_DEV,
+            Category.AGENTIC_AI_BUS,
+            Category.US,
+            Category.WORLD,
+            Category.TECH,
+            Category.BUSINESS,
+            Category.SCIENCE
+        ]
+        
+        failed_categories = []
+        
+        for category in categories_to_test:
+            feeds = config.get_feeds_for_category(category.value)
+            
+            # Skip if no feeds configured (expected for some categories)
+            if not feeds:
+                failed_categories.append((category.value, "No feeds configured"))
+                continue
+            
+            try:
+                articles = await handler.fetch_category(
+                    feeds=feeds,
+                    scraping=[],
+                    category=category,
+                    limit_per_source=3
+                )
+                
+                if not articles or len(articles) == 0:
+                    failed_categories.append((category.value, "No articles fetched - feeds may be broken"))
+                else:
+                    # Validate article content quality
+                    article = articles[0]
+                    
+                    # Check for required fields
+                    if not article.headline:
+                        failed_categories.append((category.value, "Articles missing headlines"))
+                    elif not article.url:
+                        failed_categories.append((category.value, "Articles missing URLs"))
+                    elif not article.source:
+                        failed_categories.append((category.value, "Articles missing source"))
+                    elif not (article.summary or article.content):
+                        failed_categories.append((category.value, "Articles missing content/summary"))
+                    
+            except Exception as e:
+                failed_categories.append((category.value, f"Error fetching: {str(e)[:50]}"))
+        
+        # Report all failures
+        if failed_categories:
+            error_msg = "\n❌ The following categories failed to fetch valid news content:\n"
+            for cat, reason in failed_categories:
+                error_msg += f"  - {cat}: {reason}\n"
+            error_msg += "\nPlease fix RSS feeds or add valid sources for these categories."
+            pytest.fail(error_msg)
+    
+    @pytest.mark.asyncio
+    @pytest.mark.integration
+    async def test_category_with_no_feeds_returns_empty(self):
+        """Test that categories with no configured feeds return empty list."""
+        handler = NewsHandler()
+        
+        articles = await handler.fetch_category(
+            feeds=[],
+            scraping=[],
+            category=Category.TECH,
+            limit_per_source=5
+        )
+        
+        assert isinstance(articles, list)
+        assert len(articles) == 0, "Should return empty list when no feeds configured"
 
 
 class TestEndToEndFlow:
@@ -157,3 +279,57 @@ class TestEndToEndFlow:
             assert cached_articles[0].id == "flow-test-1"
             assert cached_articles[0].headline == "Flow Test Article"
             assert cached_articles[0].category == Category.BUSINESS
+    
+    @pytest.mark.asyncio
+    @pytest.mark.integration
+    @pytest.mark.slow
+    async def test_real_fetch_cache_retrieve_flow(self):
+        """Test the full flow with actual news fetching."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Set up components
+            db_path = Path(tmpdir) / "cache.db"
+            cache = CacheManager(db_path=str(db_path))
+            handler = NewsHandler()
+            
+            # Fetch real articles
+            feeds = [{"name": "HN", "url": "https://news.ycombinator.com/rss"}]
+            articles = await handler.fetch_category(
+                feeds=feeds,
+                scraping=[],
+                category=Category.TECH,
+                limit_per_source=5
+            )
+            
+            # Should have fetched articles
+            assert len(articles) > 0, "Should fetch real articles from HN"
+            
+            # Validate fetched articles have content
+            for article in articles:
+                assert article.headline, "Fetched article should have headline"
+                assert article.url, "Fetched article should have URL"
+                assert article.summary or article.content, "Fetched article should have content"
+            
+            # Save to cache
+            cache.save_articles(articles)
+            
+            # Retrieve from cache
+            cached_articles = cache.get_articles(
+                category=Category.TECH,
+                max_age_hours=1,
+                limit=10
+            )
+            
+            # Verify cached articles match fetched articles
+            assert len(cached_articles) > 0, "Should have cached articles"
+            assert len(cached_articles) <= len(articles), "Cached count should not exceed fetched count"
+            
+            # Verify cached articles retained content
+            for article in cached_articles:
+                assert article.headline, "Cached article should have headline"
+                assert article.url, "Cached article should have URL"
+                assert article.summary or article.content, "Cached article should have content"
+            
+            # Verify article integrity
+            cached_ids = {a.id for a in cached_articles}
+            original_ids = {a.id for a in articles}
+            assert cached_ids.issubset(original_ids), "Cached articles should match original articles"

@@ -9,6 +9,13 @@ from datetime import datetime
 class Category(str, Enum):
     """News categories supported by NewsApp."""
     
+    # Breaking news
+    BREAKING = "breaking"
+    
+    # Agentic AI Categories
+    AGENTIC_AI_DEV = "agentic_ai_dev"
+    AGENTIC_AI_BUS = "agentic_ai_business"
+    
     # Core news categories
     US = "us"
     WORLD = "world"

@@ -1,7 +1,7 @@
 """News fetching utilities: RSS parsing and light scraping."""
 
 import asyncio
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List, Dict, Optional
 import logging
 
@@ -12,6 +12,9 @@ from bs4 import BeautifulSoup
 from ..models import Article, FeedConfig, Category
 
 logger = logging.getLogger(__name__)
+
+# Only show articles from the last 2 weeks
+MAX_AGE_DAYS = 14
 
 
 class NewsHandler:
@@ -48,12 +51,20 @@ class NewsHandler:
                 logger.debug(f"Feed parse warning from {source_name}: {parsed.bozo_exception}")
             
             articles: List[Article] = []
-            for entry in parsed.entries[:limit]:
+            now = datetime.utcnow()
+            cutoff_date = now - timedelta(days=MAX_AGE_DAYS)
+            
+            for entry in parsed.entries[:limit * 2]:  # Fetch more to account for filtering
                 article_id = entry.get('id') or entry.get('link') or entry.get('title')
                 published_parsed = entry.get('published_parsed')
                 published_at = None
                 if published_parsed:
                     published_at = datetime(*published_parsed[:6])
+                
+                # Skip articles older than 2 weeks
+                if published_at and published_at < cutoff_date:
+                    logger.debug(f"Skipping old article from {source_name}: {entry.get('title', '')[:50]} (published {published_at})")
+                    continue
 
                 summary = entry.get('summary') or entry.get('description') or ''
                 article = Article(
@@ -67,6 +78,8 @@ class NewsHandler:
                     published_at=published_at,
                 )
                 articles.append(article)
+                if len(articles) >= limit:
+                    break
             
             if articles:
                 logger.debug(f"Fetched {len(articles)} articles from {source_name}")

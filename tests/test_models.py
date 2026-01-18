@@ -10,6 +10,9 @@ class TestCategory:
     
     def test_category_values(self):
         """Test category enum values."""
+        assert Category.BREAKING.value == "breaking"
+        assert Category.AGENTIC_AI_DEV.value == "agentic_ai_dev"
+        assert Category.AGENTIC_AI_BUS.value == "agentic_ai_business"
         assert Category.US.value == "us"
         assert Category.TECH.value == "tech"
         assert Category.WORLD.value == "world"
@@ -19,6 +22,7 @@ class TestCategory:
         assert str(Category.US) == "Us"
         assert str(Category.TECH) == "Tech"
         assert str(Category.AGENTIC_AI) == "Agentic Ai"
+        assert str(Category.BREAKING) == "Breaking"
 
 
 class TestArticle:

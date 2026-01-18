@@ -64,14 +64,46 @@ class NewsConfig:
     def _default_rss_feeds() -> Dict[str, Dict[str, str]]:
         """Return default RSS feed configuration."""
         return {
+            # Breaking News
+            "bbc_breaking": {
+                "url": "https://feeds.bbci.co.uk/news/rss.xml",
+                "categories": ["breaking"],
+            },
+            "cnn_breaking": {
+                "url": "http://rss.cnn.com/rss/cnn_topstories.rss",
+                "categories": ["breaking"],
+            },
+            "npr_breaking": {
+                "url": "https://feeds.npr.org/1001/rss.xml",
+                "categories": ["breaking", "us", "world"],
+            },
+            # AI Developer News (current sources)
             "hackernews": {
                 "url": "https://news.ycombinator.com/rss",
-                "categories": ["tech", "business"],
+                "categories": ["tech", "business", "agentic_ai_dev"],
             },
-            "github_trending": {
-                "url": "https://github.com/trending.atom",
-                "categories": ["tech"],
+            "arxiv_ai": {
+                "url": "http://export.arxiv.org/rss/cs.AI",
+                "categories": ["agentic_ai_dev", "science"],
             },
+            "arxiv_ml": {
+                "url": "http://export.arxiv.org/rss/cs.LG",
+                "categories": ["agentic_ai_dev", "science"],
+            },
+            # AI Business News (current sources)
+            "techcrunch_ai": {
+                "url": "https://techcrunch.com/category/artificial-intelligence/feed/",
+                "categories": ["agentic_ai_business", "tech", "business"],
+            },
+            "venturebeat_ai": {
+                "url": "https://venturebeat.com/category/ai/feed/",
+                "categories": ["agentic_ai_business", "tech"],
+            },
+            "mit_tech_ai": {
+                "url": "https://www.technologyreview.com/topic/artificial-intelligence/feed",
+                "categories": ["agentic_ai_business", "tech"],
+            },
+            # General Tech & Business
             "techcrunch": {
                 "url": "https://techcrunch.com/feed/",
                 "categories": ["tech", "business"],
@@ -104,24 +136,40 @@ class NewsConfig:
                 "url": "https://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml",
                 "categories": ["entertainment"],
             },
-            "npr_news": {
-                "url": "https://feeds.npr.org/1001/rss.xml",
-                "categories": ["us", "world"],
-            },
-            "reuters_world": {
-                "url": "https://www.reutersagency.com/feed/?taxonomy=best-topics&post_type=best",
-                "categories": ["world", "business"],
-            },
-            "reddit_worldnews": {
-                "url": "https://www.reddit.com/r/worldnews/.rss",
-                "categories": ["world"],
-            },
-            "reddit_news": {
-                "url": "https://www.reddit.com/r/news/.rss",
+            "cnn_us": {
+                "url": "http://rss.cnn.com/rss/cnn_us.rss",
                 "categories": ["us"],
             },
-            "reddit_technology": {
-                "url": "https://www.reddit.com/r/technology/.rss",
+            "cnn_world": {
+                "url": "http://rss.cnn.com/rss/cnn_world.rss",
+                "categories": ["world"],
+            },
+            "cnn_tech": {
+                "url": "http://rss.cnn.com/rss/cnn_tech.rss",
+                "categories": ["tech"],
+            },
+            "reuters_business": {
+                "url": "https://www.reuters.com/finance",
+                "categories": ["business"],
+            },
+            "guardian_world": {
+                "url": "https://www.theguardian.com/world/rss",
+                "categories": ["world"],
+            },
+            "guardian_us": {
+                "url": "https://www.theguardian.com/us-news/rss",
+                "categories": ["us"],
+            },
+            "guardian_tech": {
+                "url": "https://www.theguardian.com/technology/rss",
+                "categories": ["tech"],
+            },
+            "bbc_health": {
+                "url": "https://feeds.bbci.co.uk/news/health/rss.xml",
+                "categories": ["science"],
+            },
+            "wired_tech": {
+                "url": "https://www.wired.com/feed/rss",
                 "categories": ["tech"],
             },
         }

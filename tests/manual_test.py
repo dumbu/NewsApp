@@ -2,7 +2,11 @@
 
 import asyncio
 import logging
+import sys
 from pathlib import Path
+
+# Add parent directory to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -46,7 +50,7 @@ async def test_real_app_flow():
     print("\n[3/5] Testing News Fetching...")
     handler = NewsHandler()
     
-    for category in [Category.US, Category.TECH, Category.WORLD, Category.BUSINESS]:
+    for category in [Category.BREAKING, Category.AGENTIC_AI_DEV, Category.AGENTIC_AI_BUS, Category.US, Category.TECH]:
         print(f"\n  Category: {category.value}")
         try:
             feeds = cfg.get_feeds_for_category(category.value)

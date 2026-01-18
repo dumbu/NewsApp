@@ -6,7 +6,7 @@ import logging
 
 from textual.app import ComposeResult, App
 from textual.widgets import Header, Footer, Static, Button, Label
-from textual.containers import Container, Vertical, Horizontal
+from textual.containers import Container, Vertical, Horizontal, ScrollableContainer
 from textual.message import Message
 
 from .config import ConfigManager
@@ -25,6 +25,70 @@ class NewsAppUI(App):
     TITLE = "Terminal News Application"
     SUBTITLE = "v0.1.0"
     
+    CSS = """
+    #main-container {
+        height: 1fr;
+        layout: vertical;
+    }
+    
+    #content-area {
+        height: 1fr;
+        layout: horizontal;
+    }
+    
+    #top-bar {
+        height: 3;
+        background: $boost;
+    }
+    
+    #categories-panel {
+        width: 27;
+        border: solid $accent;
+        background: $panel;
+        padding: 0;
+        margin: 0;
+    }
+    
+    #categories-panel Button {
+        width: 100%;
+    }
+    
+    #categories-header {
+        background: $boost;
+        padding: 0 1;
+        height: 3;
+    }
+    
+    #articles-panel {
+        width: 1fr;
+        border: solid $accent;
+        background: $panel;
+        padding: 0;
+        margin: 0;
+    }
+    
+    #articles-list {
+        width: 1fr;
+        height: auto;
+    }
+    
+    Button {
+        margin: 0 0;
+    }
+    
+    .article-btn {
+        width: 100%;
+        height: auto;
+        text-align: left;
+        margin: 0 0 1 0;
+    }
+    
+    .url-btn {
+        width: 100%;
+        margin: 1 0;
+    }
+    """
+    
     def __init__(self):
         super().__init__()
         self.cfg = ConfigManager()
@@ -33,28 +97,37 @@ class NewsAppUI(App):
         self.state = AppState()
         self.articles = []
         self.current_view = "dashboard"  # "dashboard" or "settings"
+        self.article_view_mode = "list"  # "list" or "detail"
+        self.selected_article = None
     
     def compose(self) -> ComposeResult:
         """Create child widgets for the app."""
         yield Header(show_clock=True)
         
         with Container(id="main-container"):
-            with Vertical():
-                yield Label("📰 Terminal News App")
-                yield Label("Press 1-5 to select category, S for settings, Q to quit")
-                
-                with Horizontal():
-                    yield Button("🇺🇸 US", id="cat-us")
+            # Two-column layout: categories on left, content on right
+            with Horizontal(id="content-area"):
+                # Left panel: Categories
+                with Vertical(id="categories-panel"):
+                    yield Label("📂 Categories", id="categories-header")
+                    yield Button("🌟 Breaking News", id="cat-breaking")
+                    yield Button("🤖 Agentic AI Developer", id="cat-agentic-dev")
+                    yield Button("💼 Agentic AI Business", id="cat-agentic-bus")
+                    yield Button("🗽 US News", id="cat-us")
                     yield Button("🌍 World", id="cat-world")
                     yield Button("💻 Tech", id="cat-tech")
                     yield Button("💼 Business", id="cat-business")
                     yield Button("🔬 Science", id="cat-science")
                 
-                with Horizontal():
-                    yield Button("⚙️  Settings", id="settings-btn")
-                    yield Button("🔄 Refresh", id="refresh-btn")
-                
-                yield Static("Loading...", id="articles-list")
+                # Right panel: Articles content
+                with ScrollableContainer(id="articles-panel"):
+                    yield Static("Select a category to view articles", id="articles-list")
+            
+            # Bottom bar with controls
+            with Horizontal(id="top-bar"):
+                yield Button("⚙️  [b][cyan]S[/cyan][/b]ettings", id="settings-btn")
+                yield Button("🔄 [b][cyan]R[/cyan][/b]efresh", id="refresh-btn")
+                yield Button("🚪 [b][cyan]Q[/cyan][/b]uit", id="quit-btn")
         
         yield Footer()
     
@@ -62,6 +135,13 @@ class NewsAppUI(App):
         """Initialize application on mount."""
         self.title = "Terminal News Application v0.1.0"
         self._load_category(Category.US)
+        # Set initial focus on first category button
+        try:
+            first_button = self.query("#categories-panel Button").first()
+            if first_button:
+                first_button.focus()
+        except:
+            pass
     
     def _load_category(self, category: Category) -> None:
         """Load articles for a category."""
@@ -90,25 +170,62 @@ class NewsAppUI(App):
             try:
                 articles = await task
                 self.articles = articles
+                self.article_view_mode = "list"
                 
-                # Format articles for display
-                content = f"\n📂 {category.value.upper()} NEWS ({len(articles)} articles)\n\n"
+                # Update UI with article list
+                articles_panel = self.query_one("#articles-panel", ScrollableContainer)
+                articles_panel.remove_children()
+                
+                # Add header
+                header = Static(f"📂 {category.value.upper()} NEWS ({len(articles)} articles)\n")
+                articles_panel.mount(header)
+                
                 if not articles:
-                    content += "No articles found. Check your connection or try another category."
+                    articles_panel.mount(Static("No articles found. Check your connection or try another category."))
                 else:
+                    # Create clickable buttons for each article
                     for i, article in enumerate(articles[:15], 1):
                         headline = article.headline[:self.cfg.ui.max_headline_length]
                         source = article.source[:15]
-                        content += f"{i}. {headline}\n   📍 {source}\n\n"
-                
-                # Update UI
-                articles_widget = self.query_one("#articles-list", Static)
-                articles_widget.update(content)
+                        btn = Button(f"{i}. {headline}\n   📍 {source}", id=f"article-{i-1}", classes="article-btn")
+                        articles_panel.mount(btn)
             except Exception as e:
-                articles_widget = self.query_one("#articles-list", Static)
-                articles_widget.update(f"Error loading articles: {e}")
+                articles_panel = self.query_one("#articles-panel", ScrollableContainer)
+                articles_panel.remove_children()
+                articles_panel.mount(Static(f"Error loading articles: {e}"))
         
         asyncio.create_task(update())
+    
+    def _show_article_detail(self, article: Article) -> None:
+        """Show detail view of an article."""
+        self.article_view_mode = "detail"
+        self.selected_article = article
+        
+        articles_panel = self.query_one("#articles-panel", ScrollableContainer)
+        articles_panel.remove_children()
+        
+        # Article detail view
+        detail_content = f"""[b]{article.headline}[/b]
+
+📍 Source: {article.source}
+⏰ Published: {article.published_at or 'Unknown'}
+✍️  Author: {article.author or 'Unknown'}
+🏷️  Tags: {', '.join(article.tags) if article.tags else 'None'}
+
+{'─' * 60}
+
+{article.content or article.summary or 'No content available'}
+
+{'─' * 60}
+
+"""
+        
+        articles_panel.mount(Static(detail_content))
+        
+        # Display URL
+        articles_panel.mount(Static(f"\n🔗 {article.url}\n"))
+        
+        articles_panel.mount(Static("\n[dim]Press ESC or Backspace to go back to the list[/dim]"))
     
     def action_quit(self) -> None:
         """Handle quit action."""
@@ -118,12 +235,27 @@ class NewsAppUI(App):
         """Handle category button clicks."""
         button_id = event.button.id
         
+        logger.info(f"Button pressed: {button_id}")
+        
         if button_id == "settings-btn":
             self._show_settings()
         elif button_id == "refresh-btn":
             self._load_category(self.state.current_category)
+        elif button_id == "quit-btn":
+            self.exit()
+        elif button_id and button_id.startswith("article-"):
+            # Handle article click
+            try:
+                article_index = int(button_id.split("-")[1])
+                if 0 <= article_index < len(self.articles):
+                    self._show_article_detail(self.articles[article_index])
+            except (ValueError, IndexError):
+                pass
         else:
             category_map = {
+                "cat-breaking": Category.BREAKING,
+                "cat-agentic-dev": Category.AGENTIC_AI_DEV,
+                "cat-agentic-bus": Category.AGENTIC_AI_BUS,
                 "cat-us": Category.US,
                 "cat-world": Category.WORLD,
                 "cat-tech": Category.TECH,
@@ -134,19 +266,50 @@ class NewsAppUI(App):
                 self._load_category(category_map[button_id])
 
     def on_key(self, event) -> None:
-        """Handle numeric shortcuts for category selection."""
-        if self.current_view != "dashboard":
-            return
-        key_map = {
-            "1": Category.US,
-            "2": Category.WORLD,
-            "3": Category.TECH,
-            "4": Category.BUSINESS,
-            "5": Category.SCIENCE,
-        }
-        cat = key_map.get(event.key)
-        if cat:
-            self._load_category(cat)
+        """Handle keyboard shortcuts."""
+        if event.key in ["escape", "backspace"]:
+            # Go back from article detail to list
+            if self.article_view_mode == "detail":
+                self._load_category(self.state.current_category)
+                return
+        
+        if event.key == "s":
+            self._show_settings()
+        elif event.key == "r":
+            if self.current_view == "dashboard":
+                self._load_category(self.state.current_category)
+        elif event.key == "q":
+            self.exit()
+        elif event.key == "left":
+            # Focus on categories panel
+            try:
+                categories = self.query("#categories-panel Button").first()
+                if categories:
+                    categories.focus()
+            except:
+                pass
+        elif event.key == "right":
+            # Focus on articles panel
+            try:
+                articles = self.query_one("#articles-panel")
+                if articles:
+                    articles.focus()
+            except:
+                pass
+        elif event.key in ["up", "down"]:
+            # Let Textual handle navigation between buttons
+            pass
+        elif self.current_view == "dashboard":
+            key_map = {
+                "1": Category.US,
+                "2": Category.WORLD,
+                "3": Category.TECH,
+                "4": Category.BUSINESS,
+                "5": Category.SCIENCE,
+            }
+            cat = key_map.get(event.key)
+            if cat:
+                self._load_category(cat)
     
     def _show_settings(self) -> None:
         """Show settings view."""
@@ -163,26 +326,37 @@ class NewsAppUI(App):
         main_container = self.query_one("#main-container", Container)
         main_container.remove_children()
         
-        # Rebuild dashboard UI
-        vertical = Vertical()
-        vertical.mount(Label("📰 Terminal News App"))
-        vertical.mount(Label("Press 1-5 to select category, S for settings, Q to quit"))
-        
-        horiz1 = Horizontal()
-        horiz1.mount(Button("🇺🇸 US", id="cat-us"))
-        horiz1.mount(Button("🌍 World", id="cat-world"))
-        horiz1.mount(Button("💻 Tech", id="cat-tech"))
-        horiz1.mount(Button("💼 Business", id="cat-business"))
-        horiz1.mount(Button("🔬 Science", id="cat-science"))
-        vertical.mount(horiz1)
-        
-        horiz2 = Horizontal()
-        horiz2.mount(Button("⚙️  Settings", id="settings-btn"))
-        horiz2.mount(Button("🔄 Refresh", id="refresh-btn"))
-        vertical.mount(horiz2)
-        
-        vertical.mount(Static("Loading...", id="articles-list"))
-        main_container.mount(vertical)
+        # Rebuild dashboard UI with two-column layout and bottom bar
+        with main_container:
+            # Two-column layout
+            content_area = Horizontal(id="content-area")
+            
+            # Left panel: Categories
+            categories_panel = Vertical(id="categories-panel")
+            categories_panel.mount(Label("📂 Categories", id="categories-header"))
+            categories_panel.mount(Button("🌟 Breaking News", id="cat-breaking"))
+            categories_panel.mount(Button("🤖 Agentic AI Developer", id="cat-agentic-dev"))
+            categories_panel.mount(Button("💼 Agentic AI Business", id="cat-agentic-bus"))
+            categories_panel.mount(Button("🗽 US News", id="cat-us"))
+            categories_panel.mount(Button("🌍 World", id="cat-world"))
+            categories_panel.mount(Button("💻 Tech", id="cat-tech"))
+            categories_panel.mount(Button("💼 Business", id="cat-business"))
+            categories_panel.mount(Button("🔬 Science", id="cat-science"))
+            content_area.mount(categories_panel)
+            
+            # Right panel: Articles
+            articles_panel = ScrollableContainer(id="articles-panel")
+            articles_panel.mount(Static("Select a category to view articles", id="articles-list"))
+            content_area.mount(articles_panel)
+            
+            main_container.mount(content_area)
+            
+            # Bottom bar with controls
+            bottom_bar = Horizontal(id="top-bar")
+            bottom_bar.mount(Button("⚙️  [b][cyan]S[/cyan][/b]ettings", id="settings-btn"))
+            bottom_bar.mount(Button("🔄 [b][cyan]R[/cyan][/b]efresh", id="refresh-btn"))
+            bottom_bar.mount(Button("🚪 [b][cyan]Q[/cyan][/b]uit", id="quit-btn"))
+            main_container.mount(bottom_bar)
         
         # Reload current category
         self._load_category(self.state.current_category)
@@ -196,7 +370,7 @@ class NewsAppUI(App):
         """Handle settings action."""
         self._show_settings()
     
-    BINDINGS = [("q", "quit", "Quit"), ("s", "settings", "Settings")]
+    BINDINGS = []
 
 
 def main():

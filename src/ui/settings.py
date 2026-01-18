@@ -90,14 +90,18 @@ class SettingsView(Static):
             feed_name = feed_info.get('name', 'Unknown')
             feed_url = feed_info.get('url', '')
             
-            # Create input field for each feed
-            container = Vertical()
-            container.mount(Label(f"📰 {feed_name}"))
+            # Create label for feed name
+            label = Label(f"📰 {feed_name}")
+            self.feeds_container.mount(label)
+            
+            # Create input field for feed URL
             feed_input = Input(value=feed_url, id=f"feed-{feed_name}")
-            container.mount(feed_input)
+            self.feeds_container.mount(feed_input)
             self.feed_inputs[feed_name] = feed_input
-            container.mount(Static("", height=1))  # Spacer
-            self.feeds_container.mount(container)
+            
+            # Add spacer
+            spacer = Static("", height=1)
+            self.feeds_container.mount(spacer)
     
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle button presses."""
