@@ -1,0 +1,15 @@
+name: Auto-assign Copilot to Issues
+
+on:
+  issues:
+    types: [opened, edited]
+
+jobs:
+  assign_copilot:
+    if: contains(github.event.issue.labels.*.name, 'AI-fix')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Assign Copilot
+        run: |
+          # Command to assign the issue to Copilot
+          echo "Assigning issue to Copilot"
