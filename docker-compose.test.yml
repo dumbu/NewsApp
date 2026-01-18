@@ -1,0 +1,34 @@
+version: '3.9'
+
+services:
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    container_name: newsapp-test
+    
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTEST_TMPDIR=/tmp/pytest
+    
+    volumes:
+      # Mount source code for testing
+      - ./src:/app/src:ro
+      - ./tests:/app/tests:ro
+      - ./pytest.ini:/app/pytest.ini:ro
+      # Mount coverage reports output
+      - ./htmlcov:/app/htmlcov
+      - ./.coverage:/app/.coverage
+    
+    working_dir: /app
+    
+    # Default command runs all tests
+    command: pytest
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 256M
