@@ -67,15 +67,23 @@ def verify_fix():
                     return False
             
             elif item.name == "on_message":
-                # Check if the old problematic handler still exists
-                old_handler_found = True
+                # Check if the old problematic handler still exists and handles BackToDashboardMessage
+                has_dashboard_check = False
+                for node in ast.walk(item):
+                    if isinstance(node, ast.Name) and node.id == "BackToDashboardMessage":
+                        has_dashboard_check = True
+                        break
+                
+                if has_dashboard_check:
+                    old_handler_found = True
     
     if not handler_found:
         print("❌ New message handler 'on_back_to_dashboard_message' not found")
         return False
     
     if old_handler_found:
-        print("⚠️  Warning: Old 'on_message' handler still exists (might cause conflicts)")
+        print("⚠️  Warning: Old 'on_message' handler with BackToDashboardMessage handling still exists")
+        print("   This could cause conflicts. Consider removing the old handler.")
     
     # All checks passed
     print("✅ Back button fix verified successfully!")
