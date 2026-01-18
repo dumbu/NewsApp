@@ -361,10 +361,9 @@ class NewsAppUI(App):
         # Reload current category
         self._load_category(self.state.current_category)
     
-    def on_message(self, message: Message) -> None:
-        """Handle app messages."""
-        if isinstance(message, BackToDashboardMessage):
-            self._show_dashboard()
+    def on_back_to_dashboard_message(self, message: BackToDashboardMessage) -> None:
+        """Handle BackToDashboardMessage from settings view."""
+        self._show_dashboard()
     
     def action_settings(self) -> None:
         """Handle settings action."""
