@@ -44,9 +44,9 @@ cache:
   # Time to live in seconds (1 hour = 3600)
   ttl: 3600
   # Database path (relative to home directory)
-  db_path: ".newsapp/cache.db"
-  # Cache size limit in MB
-  max_size_mb: 500
+  location: ".newsapp/cache.db"
+  # Maximum number of articles to cache
+  max_articles: 1000
 
 # Auto-refresh configuration
 refresh:

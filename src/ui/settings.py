@@ -78,7 +78,10 @@ class SettingsView(Static):
     def _update_feeds_display(self) -> None:
         """Update feeds display for current category."""
         self.feed_inputs.clear()
-        self.feeds_container.remove_children()
+        
+        # Remove all children from the container
+        for child in list(self.feeds_container.children):
+            child.remove()
         
         feeds = self.config.get_feeds_for_category(self.current_category.value)
         
@@ -100,7 +103,8 @@ class SettingsView(Static):
             self.feed_inputs[feed_name] = feed_input
             
             # Add spacer
-            spacer = Static("", height=1)
+            spacer = Static("")
+            spacer.styles.height = 1
             self.feeds_container.mount(spacer)
     
     def on_button_pressed(self, event: Button.Pressed) -> None:
