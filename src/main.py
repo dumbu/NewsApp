@@ -326,45 +326,41 @@ class NewsAppUI(App):
         main_container = self.query_one("#main-container", Container)
         main_container.remove_children()
         
-        # Rebuild dashboard UI with two-column layout and bottom bar
-        with main_container:
-            # Two-column layout
-            content_area = Horizontal(id="content-area")
-            
-            # Left panel: Categories
-            categories_panel = Vertical(id="categories-panel")
-            categories_panel.mount(Label("📂 Categories", id="categories-header"))
-            categories_panel.mount(Button("🌟 Breaking News", id="cat-breaking"))
-            categories_panel.mount(Button("🤖 Agentic AI Developer", id="cat-agentic-dev"))
-            categories_panel.mount(Button("💼 Agentic AI Business", id="cat-agentic-bus"))
-            categories_panel.mount(Button("🗽 US News", id="cat-us"))
-            categories_panel.mount(Button("🌍 World", id="cat-world"))
-            categories_panel.mount(Button("💻 Tech", id="cat-tech"))
-            categories_panel.mount(Button("💼 Business", id="cat-business"))
-            categories_panel.mount(Button("🔬 Science", id="cat-science"))
-            content_area.mount(categories_panel)
-            
-            # Right panel: Articles
-            articles_panel = ScrollableContainer(id="articles-panel")
-            articles_panel.mount(Static("Select a category to view articles", id="articles-list"))
-            content_area.mount(articles_panel)
-            
-            main_container.mount(content_area)
-            
-            # Bottom bar with controls
-            bottom_bar = Horizontal(id="top-bar")
-            bottom_bar.mount(Button("⚙️  [b][cyan]S[/cyan][/b]ettings", id="settings-btn"))
-            bottom_bar.mount(Button("🔄 [b][cyan]R[/cyan][/b]efresh", id="refresh-btn"))
-            bottom_bar.mount(Button("🚪 [b][cyan]Q[/cyan][/b]uit", id="quit-btn"))
-            main_container.mount(bottom_bar)
+        # Mount content_area first to the DOM
+        content_area = Horizontal(id="content-area")
+        main_container.mount(content_area)
+        
+        # Now mount children to content_area (which is now in the DOM)
+        categories_panel = Vertical(id="categories-panel")
+        content_area.mount(categories_panel)
+        categories_panel.mount(Label("📂 Categories", id="categories-header"))
+        categories_panel.mount(Button("🌟 Breaking News", id="cat-breaking"))
+        categories_panel.mount(Button("🤖 Agentic AI Developer", id="cat-agentic-dev"))
+        categories_panel.mount(Button("💼 Agentic AI Business", id="cat-agentic-bus"))
+        categories_panel.mount(Button("🗽 US News", id="cat-us"))
+        categories_panel.mount(Button("🌍 World", id="cat-world"))
+        categories_panel.mount(Button("💻 Tech", id="cat-tech"))
+        categories_panel.mount(Button("💼 Business", id="cat-business"))
+        categories_panel.mount(Button("🔬 Science", id="cat-science"))
+        
+        # Right panel: Articles
+        articles_panel = ScrollableContainer(id="articles-panel")
+        content_area.mount(articles_panel)
+        articles_panel.mount(Static("Select a category to view articles", id="articles-list"))
+        
+        # Bottom bar with controls - mount to main_container first, then add children
+        bottom_bar = Horizontal(id="top-bar")
+        main_container.mount(bottom_bar)
+        bottom_bar.mount(Button("⚙️  [b][cyan]S[/cyan][/b]ettings", id="settings-btn"))
+        bottom_bar.mount(Button("🔄 [b][cyan]R[/cyan][/b]efresh", id="refresh-btn"))
+        bottom_bar.mount(Button("🚪 [b][cyan]Q[/cyan][/b]uit", id="quit-btn"))
         
         # Reload current category
         self._load_category(self.state.current_category)
     
-    def on_message(self, message: Message) -> None:
-        """Handle app messages."""
-        if isinstance(message, BackToDashboardMessage):
-            self._show_dashboard()
+    def on_back_to_dashboard_message(self, message: BackToDashboardMessage) -> None:
+        """Handle BackToDashboardMessage from settings view."""
+        self._show_dashboard()
     
     def action_settings(self) -> None:
         """Handle settings action."""
